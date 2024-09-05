@@ -1,5 +1,3 @@
-body{
-  width: 100%;
-  margin:5% auto;
-  text-align:center;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -1,3 +1,3 @@
-const App = () => <h1>BoilerPlate Vite + React </h1>
+const App = () => <h1 className="font-bold">BoilerPlate Vite + React </h1>
 
 export { App } 
