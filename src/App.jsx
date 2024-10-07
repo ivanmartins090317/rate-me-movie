@@ -1,34 +1,89 @@
 import { useState, useEffect } from "react" 
 
+
+const NavBar = ({movies, setMovies, setClickedMovie}) =>{
+  const API_KEY = import.meta.env.VITE_API_KEY
+
+  const handleSubmitMovie = e => {
+    e.preventDefault()
+    const {searchMovie} = e.target.elements
+
+    if (searchMovie.value.length < 2) {
+      return
+    }
+
+    fetch(`https://www.omdbapi.com/?i=tt3896198&apikey=${API_KEY}&s=${searchMovie.value}`)
+      .then(response => response.json())
+      .then(data => setMovies(data.Search.map(datas => ({
+        id: datas.imdbID,
+        title: datas.Title ,
+        year: datas.Year,
+        poster: datas.Poster,
+      }))))
+
+      setClickedMovie(null)
+  }
+  
+
+  return(
+    <div className="w-5/6 m-auto text-center mt-5 border p-4 bg-gray-500 rounded-md flex justify-center">
+    <form onSubmit={handleSubmitMovie}>         
+        <input 
+        name="searchMovie"
+        type="text" 
+        placeholder="Buscar..." 
+        className="border rounded-md px-5 py-1 text-sm outline-none mr-8"
+      />
+    </form>
+    <p className="text-zinc-50">{movies.length} filmes encontrados</p>
+    </div>
+  )
+}
+
 const App = () => {
 const [movies, setMovies] = useState([])
 const [watchedMovie, setWatchedMovie] = useState([])
 const [clickedMovie, setClickedMovie] = useState(null)
 
 
-console.log(import.meta.env.VITE_API_KEY)
+const API_KEY = import.meta.env.VITE_API_KEY
+
 const getTotalTime = watchedMovie => 
   watchedMovie?.reduce((acc, item) => acc + +item.runTime.split(' ')[0], 0)
 
 const handleDeleteMovie = movieID => setWatchedMovie(prev => prev.filter(p => p.id !== movieID) )
 
-const clickedOnMovie = (movie) => setClickedMovie(prev =>
-  prev?.id === movie.id ? null : movie)
-
-  const handleSubmitMovie = e => {
-    e.preventDefault()
-    const {valueMovie} = e.target.elements
-
-    if (valueMovie.length < 2) {
+const clickedOnMovie = (movieID) =>{
+  
+    if(clickedMovie?.id === movieID.id){
+      setClickedMovie(null)
       return
     }
 
-    fetch('')
+    fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${movieID.id}`)
+     .then(response => response.json())
+    .then(data => setClickedMovie({
+      id : data.imdbID,
+      title : data.Title,
+      year : data.Year,
+      release : data.Release,
+      runTime : data.Runtime,
+      gender: data.Genre,
+      writerTo : data.Writer,
+      actors : data.Actors,
+      plot: data.Plot,
+      poster : data.Poster,
+      ratings : data.imdbRating
+    }) )
 }
+
+
+  
 // CRIAR HANDLESUBMIT PARA PEGAR VALOR DO FORM E INSERIR MOVIES A LISTA DE FAVORITOS
 
 const handleSubmit = e => setWatchedMovie(prev =>{
   e.preventDefault()
+
   const {ratting} = e.target.elements
   setWatchedMovie( [...prev, {...clickedMovie, userRatting : ratting.value}])
   setClickedMovie(null)
@@ -37,38 +92,31 @@ const handleSubmit = e => setWatchedMovie(prev =>{
   
 )
 
-
-
 useEffect(() =>{  
-      fetch(`https://raw.githubusercontent.com/ivanmartins090317/seed-movies/main/list`)
+      fetch(`https://www.omdbapi.com/?i=tt3896198&apikey=${API_KEY}&s=minions`)
     .then(response => response.json())
-    .then(data => setMovies(data.map(movie =>({
-      id : movie.imdbID,
-      title : movie.Title,
-      year : movie.Year,
-      release : movie.Release,
-      runTime : movie.Runtime,
-      gender: movie.Genre,
-      writerTo : movie.Writer,
-      actors : movie.Actors,
-      plot: movie.Plot,
-      poster : movie.Poster,
-      ratings : movie.imdbRating
+    .then(data => setMovies(data.Search.map(movie =>({
+      id:movie.imdbID,
+      title:movie.Title ,
+      year:movie.Year,
+      poster:movie.Poster,
     }))))    
 },[])
 
   return (
     <main>
-      <div className="w-5/6 m-auto text-center mt-5 border p-4 bg-gray-500 rounded-md">
+      <NavBar movies={movies} setMovies={setMovies} setClickedMovie={setWatchedMovie}/>
+      {/* <div className="w-5/6 m-auto text-center mt-5 border p-4 bg-gray-500 rounded-md flex justify-center">
       <form onSubmit={handleSubmitMovie}>         
           <input 
           name="searchMovie"
           type="text" 
           placeholder="Buscar..." 
-          className="border rounded-md px-5 py-1 text-sm outline-none "
+          className="border rounded-md px-5 py-1 text-sm outline-none mr-8"
         />
       </form>
-      </div>
+      <p className="text-zinc-50">{movies.length} filmes encontrados</p>
+      </div> */}
    
       <div>
         <div className="mt-8 flex w-full ">
@@ -142,8 +190,8 @@ useEffect(() =>{
 
                 watchedMovie.map(m =>(
                   <div key={m.id}>
-                  <div className="flex gap-4 items-center" >
-                        <div className="w-16 mb-4" key={m.id}>
+                  <div className="w-3/5 flex gap-4 items-center border-2" >
+                        <div className="w-22 mb-4" key={m.id}>
                           <img src={m.poster} alt="" />
                       </div>
                     <div >
@@ -156,17 +204,19 @@ useEffect(() =>{
                         <span>Tipo {m.gender}/</span>
                         <span>Dur. {m.runTime}</span>
                         </div>
-                        <div >
+                        <div className="mt-4">
                           <span className={`${m.ratings <= 4 ? "bg-red-400 p-1 rounded-md" :" bg-lime-400 p-1 rounded-md"} mr-3`}>Nota {m.ratings}</span>
                           <span>Minha nota {m.userRatting}</span>
                         </div>
-                      </div>
+                      <div>
                        <button 
-                   onClick={() => handleDeleteMovie(m.id)}
-                 
-                   className="border p-1 px-2 rounded-full bg-orange-300"
-                  >x
-                  </button>
+                          onClick={() => handleDeleteMovie(m.id)}
+                        
+                          className="border p-1 px-5 rounded-md bg-red-50 mt-4 border-hidden outline-none"
+                          >deletar
+                          </button>
+                      </div>
+                      </div>
                       
                   </div>
               
